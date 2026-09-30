@@ -26,7 +26,10 @@ pub trait RedisModel {
 
     /// Check if str is  of format "{self::redis_key}:{pk}"
     fn _is_pk_fmt(pk: &str) -> bool {
-        pk.starts_with(Self::_prefix_key())
+        match pk.strip_prefix(Self::_prefix_key()) {
+            Some(suffix) => suffix.starts_with(':'),
+            None => false,
+        }
     }
 
     /// Get key "{self::redis_key}:{self._get_primary_key()}"

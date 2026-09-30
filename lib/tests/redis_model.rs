@@ -82,3 +82,30 @@ fn accepts_legacy_key_as_prefix() -> Result {
 
     Ok(())
 }
+
+#[test]
+fn recognizes_formatted_primary_keys_only_at_the_delimiter() -> Result {
+    #[derive(RedisModel)]
+    #[redis(prefix_key = "user")]
+    struct User {
+        id: String,
+    }
+
+    assert!(User::_is_pk_fmt("user:7"));
+    assert_eq!(User::_fmt_pk("7"), "user:7");
+    assert!(!User::_is_pk_fmt("username:7"));
+    assert!(!User::_is_pk_fmt("user"));
+    assert!(!User::_is_pk_fmt("7"));
+    assert!(User::_is_pk_fmt("user:"));
+
+    #[derive(RedisModel)]
+    #[redis(prefix_key = "user:")]
+    struct NamespacedUser {
+        id: String,
+    }
+
+    assert!(NamespacedUser::_is_pk_fmt("user::7"));
+    assert!(!NamespacedUser::_is_pk_fmt("user:7"));
+
+    Ok(())
+}
