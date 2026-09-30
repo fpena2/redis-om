@@ -45,4 +45,3 @@ futures         = { version = "0.3.26", optional = true }
 [dev-dependencies]
 tokio          = { version = "1.25.0", features = ["full"] }
 trybuild       = { version = "1.0.77" }
-redis-swapplex = { version = "0.4.0" }
