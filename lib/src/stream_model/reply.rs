@@ -43,10 +43,9 @@ impl FromRedisValue for StreamRangeReply {
     }
 }
 
-type SRRows = Vec<HashMap<String, Vec<HashMap<String, Value>>>>;
 impl FromRedisValue for StreamReadReply {
     fn from_redis_value(v: &Value) -> RedisResult<Self> {
-        let rows: SRRows = redis::from_redis_value(v)?;
+        let rows: Vec<HashMap<String, Vec<HashMap<String, Value>>>> = redis::from_redis_value(v)?;
         let keys = rows
             .into_iter()
             .flat_map(|row| {
