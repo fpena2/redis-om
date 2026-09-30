@@ -27,9 +27,9 @@ async-std-comp = ["aio", "redis/async-std-comp"]
 ### Enables tls support
 tls = ["redis/tls"]
 ### Enables async-tokio with tls support
-tokio-native-tls-comp = [ "redis/tokio-native-tls-comp" ]
+tokio-native-tls-comp = [ "aio", "redis/tokio-comp", "redis/tokio-native-tls-comp" ]
 ### Enables async-std with tls support
-async-std-tls-comp = [ "redis/async-std-tls-comp" ]
+async-std-tls-comp = [ "aio", "redis/async-std-comp", "redis/async-std-tls-comp" ]
 
 [dependencies]
 tap             = { version = "1.0" }
