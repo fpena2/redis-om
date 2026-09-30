@@ -1,20 +1,16 @@
-use crate::ast::{Container, Ctx, Data, Field, FieldAttr, Style};
-use crate::ext::TypeExt;
-use crate::util::parse::{self, AttributeMap};
+use crate::ast::Container;
+use darling::error::Accumulator;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
-use syn::{DataStruct, Ident, Type};
 
-use super::Derive;
-
-pub fn derive(ctx: &Ctx, cont: &Container) -> Result<TokenStream, ()> {
+pub fn derive(errors: &mut Accumulator, cont: &Container) -> Result<TokenStream, ()> {
     let type_name = cont.ident;
-    let prefix_key = cont.attrs.prefix_key.as_str();
+    let prefix_key = cont.prefix_key.as_str();
 
     let mut stream = TokenStream::new();
     let consumer_type = format_ident!("{}Manager", type_name);
 
-    crate::value::derive(ctx, cont)?.to_tokens(&mut stream);
+    crate::value::derive(errors, cont)?.to_tokens(&mut stream);
 
     Ok(quote! {
         #stream

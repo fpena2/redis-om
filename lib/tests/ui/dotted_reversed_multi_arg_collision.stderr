@@ -1,0 +1,5 @@
+error: field key conflicts with Redis keys emitted by multi-argument field `items`
+ --> tests/ui/dotted_reversed_multi_arg_collision.rs:6:5
+  |
+6 |     first_item: std::string::String,
+  |     ^^^^^^^^^^

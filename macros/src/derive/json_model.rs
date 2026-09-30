@@ -1,20 +1,20 @@
-use crate::ast::{Container, Ctx, Data, Field, FieldAttr, Style};
-use crate::ext::{AttributeExt, TypeExt};
-use crate::util::parse::{self, AttributeMap};
+use crate::ast::{style_name, AccumulatorExt, Container, FieldAttr};
+use crate::type_ext::TypeExt;
+use darling::ast::{Data, Style};
+use darling::error::Accumulator;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{DataStruct, Ident, Type};
+use syn::Type;
 
-use super::Derive;
-
-pub fn derive(ctx: &Ctx, cont: &Container) -> Result<TokenStream, ()> {
+pub fn derive(errors: &mut Accumulator, cont: &Container) -> Result<TokenStream, ()> {
     let type_name = cont.ident;
     let mut stream = TokenStream::new();
-    crate::redis_model::derive(ctx, cont)?.to_tokens(&mut stream);
-    redis_schema::derive(ctx, cont)?.to_tokens(&mut stream);
-    let mut attributes = Vec::<syn::Attribute>::new();
+    crate::redis_model::derive(errors, cont)?.to_tokens(&mut stream);
+    redis_schema::derive(errors, cont)?.to_tokens(&mut stream);
     #[cfg(feature = "aio")]
-    attributes.push(syn::Attribute::from_token_stream(quote!(#[::redis_om::async_trait])).unwrap());
+    let attributes: Vec<syn::Attribute> = vec![syn::parse_quote!(#[::redis_om::async_trait])];
+    #[cfg(not(feature = "aio"))]
+    let attributes: Vec<syn::Attribute> = Vec::new();
 
     Ok(quote! {
         #stream
@@ -26,19 +26,22 @@ pub fn derive(ctx: &Ctx, cont: &Container) -> Result<TokenStream, ()> {
 mod redis_schema {
     use super::*;
 
-    pub fn derive(ctx: &Ctx, cont: &Container) -> Result<TokenStream, ()> {
+    pub fn derive(errors: &mut Accumulator, cont: &Container) -> Result<TokenStream, ()> {
         let type_name = cont.ident;
-        let prefix_key = cont.attrs.prefix_key.as_str();
+        let prefix_key = cont.prefix_key.as_str();
 
-        let Data::Struct(style, fields) = &cont.data else {
+        let Data::Struct(fields) = &cont.data else {
             let msg = &"Enum is not currenlty supported for redissearch_model";
-            ctx.error_spanned_by(cont.ident, msg);
+            errors.push_spanned_error(cont.ident, msg);
             return Err(());
         };
 
-        let Style::Struct = style else {
-            let msg = format!("{:?} Struct is not supported", style);
-            ctx.error_spanned_by(cont.original, msg);
+        let Style::Struct = fields.style else {
+            let msg = format!(
+                "{} Struct is not supported",
+                style_name(fields.style, fields.fields.len())
+            );
+            errors.push_spanned_error(cont.original, msg);
             return Err(());
         };
 
@@ -46,7 +49,24 @@ mod redis_schema {
             "ON JSON PREFIX 1 {prefix_key} SCHEMA {}",
             fields
                 .iter()
-                .map(schema_for_field)
+                .map(|field| {
+                    let mut schema_parts = Vec::new();
+                    let name = &field.attrs.name.serialize;
+                    let json_path = "$";
+
+                    if field.attrs.primary_key {
+                        schema_parts.push(format!("{json_path}.{name} AS {name} TAG SEPARATOR |"));
+                    } else if field.attrs.index || field.ty.is_list_collection() {
+                        schema_parts.push(schema_for_type(
+                            json_path,
+                            name,
+                            &field.attrs,
+                            &field.ty,
+                        ));
+                    }
+
+                    schema_parts.join(" ")
+                })
                 .collect::<Vec<_>>()
                 .join(" ")
                 .trim()
@@ -59,36 +79,12 @@ mod redis_schema {
         })
     }
 
-    // TODO: Support embedded Redis Model
-    fn schema_for_field(field: &Field) -> String {
-        let mut schema_parts = Vec::new();
-        let name = field.attrs.name.serialize_name();
-        let json_path = "$";
-
-        if field.attrs.primary_key {
-            let value = format!("{json_path}.{name} AS {name} TAG SEPARATOR |");
-            schema_parts.push(value);
-        } else if field.attrs.index {
-            let value = schema_for_type(json_path, name, &field.attrs, field.ty);
-            schema_parts.push(value);
-        } else if field.ty.is_list_collection() {
-            let ty = field
-                .ty
-                .get_inner_type()
-                .expect("inner type of list-like type");
-            let value = schema_for_type(json_path, name, &field.attrs, field.ty);
-            schema_parts.push(value);
-        }
-
-        schema_parts.join(" ")
-    }
-
-    fn schema_for_type(json_path: &str, name: String, attrs: &FieldAttr, ty: &Type) -> String {
+    fn schema_for_type(json_path: &str, name: &str, attrs: &FieldAttr, ty: &Type) -> String {
         let mut schema: Vec<String> = vec![];
         let path = format!("{json_path}.{name}");
 
         if ty.is_list_collection() {
-            let ty = &ty.get_inner_type().unwrap();
+            let ty = ty.get_inner_type().unwrap();
             schema.push(schema_for_type(json_path, name, attrs, ty));
         } else if ty.is_numeric_type() {
             schema.push(format!("{path} AS {name} NUMERIC"));

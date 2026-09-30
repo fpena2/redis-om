@@ -1,0 +1,5 @@
+error: field key conflicts with Redis keys emitted by multi-argument field `items`
+ --> tests/ui/dotted_serialize_only_collision.rs:7:5
+  |
+7 |     first_item_label: String,
+  |     ^^^^^^^^^^^^^^^^

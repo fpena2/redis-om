@@ -1,23 +1,33 @@
 use super::TokenStream;
-use crate::ast::Variant;
-use crate::ast::{Container, Ctx, Style};
-use crate::util::{parse::AttributeMap, string};
+use crate::ast::{AccumulatorExt, Container, Variant};
+use darling::ast::Style;
+use darling::error::Accumulator;
 use quote::quote;
-use syn::{DataEnum, Fields, Ident};
 
-pub(super) fn derive(ctx: &Ctx, cont: &Container, variants: &[Variant]) -> Result<TokenStream, ()> {
+pub(super) fn derive(
+    errors: &mut Accumulator,
+    cont: &Container,
+    variants: &[Variant],
+) -> Result<TokenStream, ()> {
     if !variants.iter().all(|v| {
-        let is_unit = matches!(v.style, Style::Unit);
+        let is_unit = matches!(v.fields.style, Style::Unit);
         if !is_unit {
-            ctx.error_spanned_by(v.inner, "Only Enum's Unit variant is currently supported");
+            errors.push_spanned_error(v.inner, "Only Enum's Unit variant is currently supported");
         };
         is_unit
     }) {
         return Err(());
     };
 
-    let to_redis_args = derive_to_redis_args(ctx, cont, variants)?;
-    let from_redis_args = derive_from_redis_args(ctx, cont, variants)?;
+    for variant in variants.iter().filter(|v| v.attrs.skip_serializing) {
+        errors.push_spanned_error(variant.inner, "cannot skip serializing an enum variant");
+    }
+    if variants.iter().any(|v| v.attrs.skip_serializing) {
+        return Err(());
+    }
+
+    let to_redis_args = derive_to_redis_args(cont, variants);
+    let from_redis_args = derive_from_redis_args(cont, variants);
 
     Ok(quote![
        #to_redis_args
@@ -25,35 +35,27 @@ pub(super) fn derive(ctx: &Ctx, cont: &Container, variants: &[Variant]) -> Resul
     ])
 }
 
-fn derive_to_redis_args(
-    ctx: &Ctx,
-    cont: &Container,
-    variants: &[Variant],
-) -> Result<TokenStream, ()> {
+fn derive_to_redis_args(cont: &Container, variants: &[Variant]) -> TokenStream {
     let type_name = cont.ident;
     let matches = variants
         .iter()
         .filter(|v| !v.attrs.skip_serializing)
         .map(|v| {
             let name = &v.ident;
-            let value = v.attrs.name.serialize_name();
+            let value = &v.attrs.name.serialize;
             quote!(#type_name::#name => out.write_arg(#value.as_bytes()),)
         });
 
-    Ok(quote! {
+    quote! {
         impl ::redis_om::redis::ToRedisArgs for #type_name {
             fn write_redis_args<W: ?Sized + ::redis_om::redis::RedisWrite>(&self, out: &mut W) {
                 match self { #(#matches)* }
             }
         }
-    })
+    }
 }
 
-fn derive_from_redis_args(
-    ctx: &Ctx,
-    cont: &Container,
-    variants: &[Variant],
-) -> Result<TokenStream, ()> {
+fn derive_from_redis_args(cont: &Container, variants: &[Variant]) -> TokenStream {
     let type_name = cont.ident;
     let except_redis_string = quote! {
         let msg = format!("{:?}", v);
@@ -82,7 +84,7 @@ fn derive_from_redis_args(
         Err((TypeError, "Invalid enum variant:", msg).into())
     }};
 
-    Ok(quote! {
+    quote! {
         impl ::redis_om::redis::FromRedisValue for #type_name {
             fn from_redis_value(v: &::redis_om::redis::Value) -> ::redis_om::RedisResult<Self> {
                 use ::redis_om::redis::{ErrorKind::TypeError, Value};
@@ -96,5 +98,5 @@ fn derive_from_redis_args(
                 }
             }
         }
-    })
+    }
 }

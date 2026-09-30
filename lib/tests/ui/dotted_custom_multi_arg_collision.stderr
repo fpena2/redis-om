@@ -1,0 +1,5 @@
+error: field key conflicts with Redis keys emitted by multi-argument field `custom_value`
+  --> tests/ui/dotted_custom_multi_arg_collision.rs:11:5
+   |
+11 |     first_custom_value: std::string::String,
+   |     ^^^^^^^^^^^^^^^^^^

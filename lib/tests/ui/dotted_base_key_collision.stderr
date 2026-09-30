@@ -1,0 +1,11 @@
+error: field key conflicts with Redis keys emitted by multi-argument field `items`
+ --> tests/ui/dotted_base_key_collision.rs:7:5
+  |
+7 |     items_label: String,
+  |     ^^^^^^^^^^^
+
+error: field key conflicts with Redis keys emitted by multi-argument field `items`
+ --> tests/ui/dotted_base_key_collision.rs:5:5
+  |
+5 |     items: Vec<String>,
+  |     ^^^^^

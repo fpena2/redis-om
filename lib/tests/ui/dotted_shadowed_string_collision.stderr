@@ -1,0 +1,5 @@
+error: field key conflicts with Redis keys emitted by multi-argument field `items`
+ --> tests/ui/dotted_shadowed_string_collision.rs:9:5
+  |
+9 |     first_item_label: std::string::String,
+  |     ^^^^^^^^^^^^^^^^

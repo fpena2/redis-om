@@ -1,0 +1,5 @@
+error: cannot skip deserializing a required field without a default
+ --> tests/ui/skip_deserializing_field.rs:6:5
+  |
+6 |     required: String,
+  |     ^^^^^^^^

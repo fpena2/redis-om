@@ -1,28 +1,33 @@
-use crate::ast::{Container, Ctx, Field, Style};
+use crate::ast::{style_name, AccumulatorExt, Container, Field};
+use darling::ast::Style;
+use darling::error::Accumulator;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::AttrStyle;
 
 pub(super) fn derive(
-    ctx: &Ctx,
+    errors: &mut Accumulator,
     cont: &Container,
     style: &Style,
     fields: &[Field],
 ) -> Result<TokenStream, ()> {
     let type_name = cont.ident;
-    let prefix_key = cont.attrs.prefix_key.as_str();
+    let prefix_key = cont.prefix_key.as_str();
 
     // TODO: Find away to ignore types already implements default trait.
     match style {
         Style::Struct => {
             let pk_field = fields.iter().find(|f| f.attrs.primary_key);
             let pk_ident = pk_field
-                .map(|v| v.ident.unwrap().to_owned())
+                .map(|v| v.ident.as_ref().unwrap().to_owned())
                 .unwrap_or_else(|| Ident::new("id", cont.ident.span()));
 
-            if fields.iter().find(|f| f.ident == Some(&pk_ident)).is_none() {
-                let msg = format!("A primary field doesn't exists, either add `id` field or annotate a field `primary_key`");
-                ctx.error_spanned_by(cont.original, msg);
+            if fields
+                .iter()
+                .find(|f| f.ident.as_ref() == Some(&pk_ident))
+                .is_none()
+            {
+                let msg = "A primary field doesn't exists, either add `id` field or annotate a field `primary_key`".to_string();
+                errors.push_spanned_error(cont.original, msg);
                 return Err(());
             };
 
@@ -42,9 +47,12 @@ pub(super) fn derive(
                 }
             })
         }
-        Style::Tuple | Style::Newtype | Style::Unit => {
-            let msg = format!("{:?} Struct is not supported", style);
-            ctx.error_spanned_by(cont.original, msg);
+        Style::Tuple | Style::Unit => {
+            let msg = format!(
+                "{} Struct is not supported",
+                style_name(*style, fields.len())
+            );
+            errors.push_spanned_error(cont.original, msg);
             Err(())
         }
     }

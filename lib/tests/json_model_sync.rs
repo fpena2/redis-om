@@ -190,7 +190,7 @@ fn test_redis_schema() -> Result {
         email: String,
         #[redis(index)]
         age: u32,
-        #[redis(index, full_text_search, default = "String::default")]
+        #[redis(index, full_text_search)]
         bio: Option<String>,
         join_date: String,
     }

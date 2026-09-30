@@ -1,0 +1,5 @@
+error: cannot skip serializing an enum variant
+ --> tests/ui/skip_serializing_variant.rs:5:5
+  |
+5 |     #[redis(skip_serializing)]
+  |     ^
