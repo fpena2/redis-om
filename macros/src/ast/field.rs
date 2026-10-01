@@ -1,7 +1,6 @@
 use darling::{FromField, util::Flag};
-use syn::ext::IdentExt;
 
-use crate::ast::{Name, RedisRename};
+use crate::ast::{Name, RedisRename, SourceName};
 
 #[derive(FromField)]
 #[darling(attributes(redis))]
@@ -58,7 +57,7 @@ impl FieldOptions {
             skip_serializing,
         } = self;
         let name = match &ident {
-            Some(ident) => ident.unraw().to_string(),
+            Some(ident) => ident.source_name(),
             None => index.to_string(),
         };
         Field {

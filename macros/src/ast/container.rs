@@ -1,11 +1,10 @@
 use super::{Field, FieldOptions, Variant, VariantAttr, VariantOptions};
-use crate::ast::{AccumulatorExt, RenameAll, RenameAllRules, RenameRule};
+use crate::ast::{AccumulatorExt, RenameAll, RenameAllRules, RenameRule, SourceName};
 use darling::Error;
 use darling::FromDeriveInput;
 use darling::ast::{Data, Fields};
 use darling::error::Accumulator;
 use darling::util::SpannedValue;
-use syn::ext::IdentExt;
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(redis))]
@@ -55,7 +54,7 @@ impl<'a> Container<'a> {
             }
             (Some(prefix_key), None) => prefix_key.into_inner(),
             (None, Some(key)) => key.into_inner(),
-            (None, None) => item.ident.unraw().to_string(),
+            (None, None) => item.ident.source_name(),
         };
 
         let rename_all_rules = rename_all.map(RenameAllRules::from).unwrap_or_default();

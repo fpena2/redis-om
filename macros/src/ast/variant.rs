@@ -1,8 +1,7 @@
 use darling::{FromVariant, ast::Fields, util::Flag};
-use syn::ext::IdentExt;
 
 use super::Field;
-use crate::ast::{FieldOptions, Name, RedisRename, RenameAll, RenameAllRules};
+use crate::ast::{FieldOptions, Name, RedisRename, RenameAll, RenameAllRules, SourceName};
 
 #[derive(FromVariant)]
 #[darling(attributes(redis))]
@@ -51,7 +50,7 @@ impl VariantAttr {
 
         (
             Self {
-                name: Name::from_attrs(variant.ident.unraw().to_string(), rename, alias),
+                name: Name::from_attrs(variant.ident.source_name(), rename, alias),
                 skip_serializing: skip.is_present() || skip_serializing.is_present(),
                 skip_deserializing: skip.is_present() || skip_deserializing.is_present(),
                 rename_all_rules,

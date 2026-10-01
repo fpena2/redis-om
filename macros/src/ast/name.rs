@@ -2,6 +2,7 @@ use darling::util::SpannedValue;
 use darling::{Error, FromMeta, ast::NestedMeta};
 use ident_case::RenameRule as IdentCaseRule;
 use std::collections::BTreeSet;
+use syn::ext::IdentExt;
 
 #[derive(Default, FromMeta)]
 pub(crate) struct RenameParts<T> {
@@ -124,6 +125,16 @@ impl From<RenameAll> for RenameAllRules {
                 deserialize: parts.deserialize.map(SpannedValue::into_inner),
             },
         }
+    }
+}
+
+pub(crate) trait SourceName {
+    fn source_name(&self) -> String;
+}
+
+impl SourceName for syn::Ident {
+    fn source_name(&self) -> String {
+        self.unraw().to_string()
     }
 }
 
