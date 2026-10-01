@@ -1,5 +1,5 @@
 use super::{Field, FieldOptions, Variant, VariantAttr, VariantOptions};
-use crate::ast::{AccumulatorExt, RenameAll, RenameAllRules, RenameRule, SourceName};
+use crate::ast::{AccumulatorExt, RenameAll, RenameAllRules, SourceName};
 use darling::Error;
 use darling::FromDeriveInput;
 use darling::ast::{Data, Fields};
@@ -88,24 +88,18 @@ impl<'a> Container<'a> {
         match &mut data {
             Data::Enum(variants) => {
                 for variant in variants {
-                    variant
-                        .attrs
-                        .name
-                        .rename_by_rules(&rename_all_rules, RenameRule::apply_to_variant);
+                    rename_all_rules.apply_to_variant(&mut variant.attrs.name);
                     for field in &mut variant.fields.fields {
-                        field.attrs.name.rename_by_rules(
-                            &variant.attrs.rename_all_rules,
-                            RenameRule::apply_to_field,
-                        );
+                        variant
+                            .attrs
+                            .rename_all_rules
+                            .apply_to_field(&mut field.attrs.name);
                     }
                 }
             }
             Data::Struct(fields) => {
                 for field in &mut fields.fields {
-                    field
-                        .attrs
-                        .name
-                        .rename_by_rules(&rename_all_rules, RenameRule::apply_to_field);
+                    rename_all_rules.apply_to_field(&mut field.attrs.name);
                 }
             }
         }

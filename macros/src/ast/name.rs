@@ -128,6 +128,29 @@ impl From<RenameAll> for RenameAllRules {
     }
 }
 
+impl RenameAllRules {
+    pub(crate) fn apply_to_variant(&self, name: &mut Name) {
+        self.apply(name, RenameRule::apply_to_variant);
+    }
+
+    pub(crate) fn apply_to_field(&self, name: &mut Name) {
+        self.apply(name, RenameRule::apply_to_field);
+    }
+
+    fn apply(&self, name: &mut Name, apply_rule: fn(&RenameRule, &str) -> String) {
+        if !name.serialize_renamed
+            && let Some(rule) = &self.serialize
+        {
+            name.serialize = apply_rule(rule, &name.serialize);
+        }
+        if !name.deserialize_renamed
+            && let Some(rule) = &self.deserialize
+        {
+            name.deserialize = apply_rule(rule, &name.deserialize);
+        }
+    }
+}
+
 pub(crate) trait SourceName {
     fn source_name(&self) -> String;
 }
@@ -187,23 +210,6 @@ impl Name {
             deserialize: deserialize.unwrap_or(source_name),
             deserialize_renamed,
             deserialize_aliases,
-        }
-    }
-
-    pub(crate) fn rename_by_rules(
-        &mut self,
-        rules: &RenameAllRules,
-        apply_rule: fn(&RenameRule, &str) -> String,
-    ) {
-        if !self.serialize_renamed
-            && let Some(rule) = &rules.serialize
-        {
-            self.serialize = apply_rule(rule, &self.serialize);
-        }
-        if !self.deserialize_renamed
-            && let Some(rule) = &rules.deserialize
-        {
-            self.deserialize = apply_rule(rule, &self.deserialize);
         }
     }
 
@@ -279,7 +285,7 @@ fn name_rename_by_rules_preserves_explicit_names() {
         deserialize: Some(RenameRule::Standard(IdentCaseRule::PascalCase)),
     };
 
-    explicit_name.rename_by_rules(&rules, |rule, name| rule.apply_to_field(name));
+    rules.apply_to_field(&mut explicit_name);
 
     assert_eq!(explicit_name.serialize, "written_name");
     assert_eq!(explicit_name.deserialize, "read_name");
@@ -289,12 +295,12 @@ fn name_rename_by_rules_preserves_explicit_names() {
     );
 
     let mut field_name = Name::from_attrs("source_name".to_owned(), None, Vec::new());
-    field_name.rename_by_rules(&rules, |rule, name| rule.apply_to_field(name));
+    rules.apply_to_field(&mut field_name);
     assert_eq!(field_name.serialize, "SourceName");
     assert_eq!(field_name.deserialize, "SourceName");
 
     let mut variant_name = Name::from_attrs("source_name".to_owned(), None, Vec::new());
-    variant_name.rename_by_rules(&rules, |rule, name| rule.apply_to_variant(name));
+    rules.apply_to_variant(&mut variant_name);
     assert_eq!(variant_name.serialize, "source_name");
     assert_eq!(variant_name.deserialize, "source_name");
 }
