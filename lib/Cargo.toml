@@ -33,7 +33,6 @@ async-std-tls-comp = [ "aio", "redis/async-std-comp", "redis/async-std-tls-comp"
 
 [dependencies]
 tap             = { version = "1.0" }
-thiserror       = { version = "1.0" }
 redis-om-macros = { version = "0.1.0", path = "../macros" }
 redis           = { version = "0.22.1" }
 rusty_ulid      = { version = "2.0.0" }
