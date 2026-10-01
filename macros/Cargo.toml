@@ -24,7 +24,7 @@ darling        = { version = "0.24.1" }
 ident_case     = { version = "1.0" }
 proc-macro2    = { version = "1.0" }
 quote          = { version = "1.0" }
-syn            = { version = "3.0", features = ["full"] }
+syn            = { version = "3.0" }
 
 [dev-dependencies]
 redis-om       = { path = "../lib/" }

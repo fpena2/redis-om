@@ -139,15 +139,15 @@ impl From<RenameAll> for RenameAllRules {
     fn from(rename: RenameAll) -> Self {
         match rename {
             RenameAll::Value(value) => {
-                let rule = *value.as_ref();
+                let rule = value.into_inner();
                 Self {
                     serialize: Some(rule),
                     deserialize: Some(rule),
                 }
             }
             RenameAll::Parts(parts) => Self {
-                serialize: parts.serialize.map(|value| *value.as_ref()),
-                deserialize: parts.deserialize.map(|value| *value.as_ref()),
+                serialize: parts.serialize.map(SpannedValue::into_inner),
+                deserialize: parts.deserialize.map(SpannedValue::into_inner),
             },
         }
     }
@@ -169,15 +169,15 @@ impl Name {
     ) -> Name {
         let (serialize, deserialize) = match rename {
             Some(RedisRename::Value(value)) => {
-                let value = value.as_ref().clone();
+                let value = value.into_inner();
                 aliases.push(value.clone());
                 (Some(value.clone()), Some(value))
             }
             Some(RedisRename::Parts(parts)) => {
-                let serialize = parts.serialize.map(|value| value.as_ref().clone());
+                let serialize = parts.serialize.map(SpannedValue::into_inner);
                 let mut deserialize = None;
                 for value in parts.deserialize {
-                    let value = value.as_ref().clone();
+                    let value = value.into_inner();
                     if deserialize.is_none() {
                         deserialize = Some(value.clone());
                     }
