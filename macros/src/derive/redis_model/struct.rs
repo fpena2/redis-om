@@ -1,4 +1,4 @@
-use crate::ast::{style_name, AccumulatorExt, Container, Field};
+use crate::ast::{AccumulatorExt, Container, Field, style_name};
 use darling::ast::Style;
 use darling::error::Accumulator;
 use proc_macro2::{Ident, TokenStream};

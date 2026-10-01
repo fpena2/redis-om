@@ -1,7 +1,7 @@
 use super::{cmds, parse_from_get_resp};
 use crate::{RedisModel, RedisSearchModel};
 use redis::{ConnectionLike, Iter, RedisResult};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 /// Hash Object Model
 pub trait JsonModel: RedisModel + RedisSearchModel + Serialize + DeserializeOwned {

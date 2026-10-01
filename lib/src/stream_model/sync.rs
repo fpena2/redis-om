@@ -1,5 +1,5 @@
-use redis::streams::StreamMaxlen;
 use redis::ConnectionLike;
+use redis::streams::StreamMaxlen;
 use redis::{FromRedisValue, RedisResult, ToRedisArgs};
 
 use super::cmds;

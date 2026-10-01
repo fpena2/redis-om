@@ -1,4 +1,4 @@
-use darling::{ast::Fields, util::Flag, FromVariant};
+use darling::{FromVariant, ast::Fields, util::Flag};
 use syn::ext::IdentExt;
 
 use super::Field;

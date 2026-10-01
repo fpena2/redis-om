@@ -1,9 +1,9 @@
-use crate::ast::{style_name, AccumulatorExt, Container, FieldAttr};
+use crate::ast::{AccumulatorExt, Container, FieldAttr, style_name};
 use crate::type_ext::TypeExt;
 use darling::ast::{Data, Style};
 use darling::error::Accumulator;
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::Type;
 
 pub fn derive(errors: &mut Accumulator, cont: &Container) -> Result<TokenStream, ()> {

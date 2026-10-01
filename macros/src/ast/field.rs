@@ -1,4 +1,4 @@
-use darling::{util::Flag, FromField};
+use darling::{FromField, util::Flag};
 
 use crate::ast::{Name, RedisRename};
 

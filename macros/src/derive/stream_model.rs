@@ -1,7 +1,7 @@
 use crate::ast::Container;
 use darling::error::Accumulator;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 
 pub fn derive(errors: &mut Accumulator, cont: &Container) -> Result<TokenStream, ()> {
     let type_name = cont.ident;

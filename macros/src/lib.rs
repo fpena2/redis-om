@@ -10,7 +10,7 @@ use ast::Container;
 use darling::error::Accumulator;
 use derive::*;
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 #[proc_macro_derive(HashModel, attributes(redis))]
 pub fn hash_model(attr: TokenStream) -> TokenStream {

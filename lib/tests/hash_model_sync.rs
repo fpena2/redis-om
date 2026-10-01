@@ -3,9 +3,9 @@
 use std::time::Duration;
 
 use redis::Commands;
+use redis_om::HashModel;
 use redis_om::redis::Value;
 use redis_om::redis::{FromRedisValue, ToRedisArgs};
-use redis_om::HashModel;
 
 type Result<T = (), E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 

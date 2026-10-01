@@ -13,8 +13,8 @@ pub use sync::StreamModel;
 
 mod cmds {
     use redis::{
-        streams::{StreamMaxlen, StreamReadOptions},
         Cmd, RedisResult, ToRedisArgs,
+        streams::{StreamMaxlen, StreamReadOptions},
     };
 
     use super::StreamModel;
@@ -151,9 +151,9 @@ mod cmds {
 
 mod transformers {
     use super::{
+        StreamModel,
         message::Message,
         reply::{StreamRangeReply, StreamReadReply},
-        StreamModel,
     };
     use redis::RedisResult;
     use tap::Pipe;

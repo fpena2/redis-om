@@ -7,7 +7,7 @@ pub(crate) use field::*;
 pub(crate) use variant::*;
 
 use darling::util::SpannedValue;
-use darling::{ast::NestedMeta, error::Accumulator, Error, FromMeta};
+use darling::{Error, FromMeta, ast::NestedMeta, error::Accumulator};
 use ident_case::RenameRule as IdentCaseRule;
 use quote::ToTokens;
 use std::collections::BTreeSet;

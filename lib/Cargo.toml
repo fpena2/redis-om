@@ -2,7 +2,7 @@
 name = "redis-om"
 description = "Redis ORM-style library that simplify the development process and reduce the amount of boilerplate code needed to build programs that leverage [redis] powerful capabilities and use cases."
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 rust-version = "1.88"
 authors = [ "kkharji <kkharji@protonmail.com>"]
 license = "MIT"

@@ -1,6 +1,6 @@
-use redis_om::redis::{from_redis_value_ref, Value};
-use redis_om::redis::{FromRedisValue, ToRedisArgs};
 use redis_om::RedisTransportValue;
+use redis_om::redis::{FromRedisValue, ToRedisArgs};
+use redis_om::redis::{Value, from_redis_value_ref};
 use std::collections::HashMap;
 
 type Result<T = (), E = Box<dyn std::error::Error>> = std::result::Result<T, E>;

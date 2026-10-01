@@ -1,7 +1,7 @@
 use super::{cmds, parse_from_get_resp};
 use crate::{RedisModel, RedisSearchModel};
-use redis::{aio::ConnectionLike, AsyncIter, RedisResult};
-use serde::{de::DeserializeOwned, Serialize};
+use redis::{AsyncIter, RedisResult, aio::ConnectionLike};
+use serde::{Serialize, de::DeserializeOwned};
 
 /// Hash Object Model
 #[async_trait::async_trait]

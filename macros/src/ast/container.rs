@@ -1,8 +1,8 @@
 use super::{Field, FieldOptions, Variant, VariantAttr, VariantOptions};
 use crate::ast::{AccumulatorExt, RenameAll, RenameAllRules, RenameRule};
+use darling::FromDeriveInput;
 use darling::ast::{Data, Fields};
 use darling::error::Accumulator;
-use darling::FromDeriveInput;
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(redis))]
