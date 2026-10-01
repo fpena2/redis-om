@@ -204,6 +204,9 @@ fn test_redis_search_schema() -> Result {
         c: u32,
         #[redis(index)]
         d: f32,
+        #[redis(index)]
+        scores: Vec<i32>,
+        tags: Vec<String>,
     }
 
     assert_eq!(
@@ -215,7 +218,9 @@ fn test_redis_search_schema() -> Result {
                 b TAG SEPARATOR | \
                 b AS b_fts TEXT \
                 c NUMERIC SORTABLE \
-                d NUMERIC"
+                d NUMERIC \
+                scores NUMERIC \
+                tags TAG SEPARATOR |"
         )
     );
 

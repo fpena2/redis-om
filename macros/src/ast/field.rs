@@ -1,4 +1,5 @@
 use darling::{FromField, util::Flag};
+use syn::ext::IdentExt;
 
 use crate::ast::{Name, RedisRename};
 
@@ -57,7 +58,7 @@ impl FieldOptions {
             skip_serializing,
         } = self;
         let name = match &ident {
-            Some(ident) => ident.to_string().trim_start_matches("r#").to_owned(),
+            Some(ident) => ident.unraw().to_string(),
             None => index.to_string(),
         };
         Field {

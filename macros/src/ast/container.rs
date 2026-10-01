@@ -1,10 +1,11 @@
 use super::{Field, FieldOptions, Variant, VariantAttr, VariantOptions};
-use crate::ast::{RenameAll, RenameAllRules, RenameRule};
+use crate::ast::{AccumulatorExt, RenameAll, RenameAllRules, RenameRule};
 use darling::Error;
 use darling::FromDeriveInput;
 use darling::ast::{Data, Fields};
 use darling::error::Accumulator;
 use darling::util::SpannedValue;
+use syn::ext::IdentExt;
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(redis))]
@@ -54,7 +55,7 @@ impl<'a> Container<'a> {
             }
             (Some(prefix_key), None) => prefix_key.into_inner(),
             (None, Some(key)) => key.into_inner(),
-            (None, None) => item.ident.to_string().trim_start_matches("r#").to_owned(),
+            (None, None) => item.ident.unraw().to_string(),
         };
 
         let rename_all_rules = rename_all.map(RenameAllRules::from).unwrap_or_default();
@@ -79,7 +80,10 @@ impl<'a> Container<'a> {
             (syn::Data::Struct(_), Data::Struct(options)) => {
                 Data::Struct(struct_from_options(options))
             }
-            _ => unreachable!(),
+            _ => {
+                errors.push_spanned_error(item, "unsupported container shape");
+                return None;
+            }
         };
 
         match &mut data {

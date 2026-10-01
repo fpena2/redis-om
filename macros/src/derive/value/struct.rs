@@ -83,13 +83,15 @@ fn derive_from_redis(
             let err = quote!(::redis_om::redis::ParsingError::from(
                 format!("{}: {}", #err_msg, msg)
             ));
+            let mut has_skip_deserializing = false;
             for field in fields.iter().filter(|f| f.attrs.skip_deserializing) {
                 errors.push_spanned_error(
                     field.ident.as_ref().unwrap(),
                     "cannot skip deserializing a required field without a default",
                 );
+                has_skip_deserializing = true;
             }
-            if fields.iter().any(|f| f.attrs.skip_deserializing) {
+            if has_skip_deserializing {
                 return Err(());
             }
 

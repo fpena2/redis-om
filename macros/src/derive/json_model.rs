@@ -83,9 +83,10 @@ mod redis_schema {
         let mut schema: Vec<String> = vec![];
         let path = format!("{json_path}.{name}");
 
-        if ty.is_list_collection() {
-            let ty = ty.get_inner_type().unwrap();
-            schema.push(schema_for_type(json_path, name, attrs, ty));
+        if ty.is_list_collection()
+            && let Some(inner) = ty.get_inner_type()
+        {
+            schema.push(schema_for_type(json_path, name, attrs, inner));
         } else if ty.is_numeric_type() {
             schema.push(format!("{path} AS {name} NUMERIC"));
         } else if ty.is_ident("String") {

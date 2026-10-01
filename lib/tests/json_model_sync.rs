@@ -192,6 +192,9 @@ fn test_redis_schema() -> Result {
         age: u32,
         #[redis(index, full_text_search)]
         bio: Option<String>,
+        #[redis(index)]
+        scores: Vec<i32>,
+        tags: Vec<String>,
         join_date: String,
     }
 
@@ -205,7 +208,9 @@ fn test_redis_schema() -> Result {
                $.email AS email TAG SEPARATOR | \
                $.age AS age NUMERIC \
                $.bio AS bio TAG SEPARATOR | \
-               $.bio AS bio_fts TEXT"
+               $.bio AS bio_fts TEXT \
+               $.scores AS scores NUMERIC \
+               $.tags AS tags TAG SEPARATOR |"
         )
     );
 

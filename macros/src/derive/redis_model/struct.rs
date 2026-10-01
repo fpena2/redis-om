@@ -18,7 +18,7 @@ pub(super) fn derive(
         Style::Struct => {
             let pk_field = fields.iter().find(|f| f.attrs.primary_key);
             let pk_ident = pk_field
-                .map(|v| v.ident.as_ref().unwrap().to_owned())
+                .and_then(|v| v.ident.clone())
                 .unwrap_or_else(|| Ident::new("id", cont.ident.span()));
 
             if fields

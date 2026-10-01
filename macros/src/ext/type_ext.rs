@@ -21,8 +21,9 @@ impl TypeExt for Type {
         if single_argument_path_segment(ty)
             .map(|last| <syn::Ident as PartialEq<str>>::eq(&last.ident, "Option"))
             .unwrap_or(false)
+            && let Some(inner) = self.get_inner_type()
         {
-            ty = self.get_inner_type().unwrap();
+            ty = inner;
         }
         let Some(path) = type_path(ty) else {
             return false;
@@ -101,7 +102,12 @@ fn type_path(ty: &Type) -> Option<&Path> {
 fn single_argument_path_segment(ty: &Type) -> Option<&PathSegment> {
     let last = type_path(ty)?.segments.last()?;
     match &last.arguments {
-        PathArguments::AngleBracketed(args) if args.args.len() == 1 => Some(last),
+        PathArguments::AngleBracketed(args)
+            if args.args.len() == 1
+                && matches!(args.args.first(), Some(syn::GenericArgument::Type(_))) =>
+        {
+            Some(last)
+        }
         _ => None,
     }
 }
@@ -156,4 +162,14 @@ fn test_get_inner_type() {
     let ty = syn::parse_str::<Type>("std::vec::Vec<String>").unwrap();
     let inner = ty.get_inner_type();
     assert!(inner.map(|v| v.is_ident("String")).unwrap());
+}
+
+#[test]
+fn ignores_non_type_generic_arguments() {
+    let ty: syn::Type = syn::parse_str("Vec<'a>").unwrap();
+    assert!(!ty.is_list_collection());
+
+    let ty: syn::Type = syn::parse_str("Option<'a>").unwrap();
+    assert!(ty.is_ident("Option"));
+    assert!(!ty.is_ident("String"));
 }

@@ -64,9 +64,10 @@ mod redis_schema {
                         schema_parts.push(format!("{key} TAG SEPARATOR |"));
                     } else if attrs.index {
                         schema_parts.push(schema_for_type(attrs, ty));
-                    } else if ty.is_list_collection() {
-                        let ty = ty.get_inner_type().expect("inner type of list-like type");
-                        schema_parts.push(schema_for_type(attrs, ty));
+                    } else if ty.is_list_collection()
+                        && let Some(inner) = ty.get_inner_type()
+                    {
+                        schema_parts.push(schema_for_type(attrs, inner));
                     }
 
                     schema_parts.join(" ")
@@ -85,9 +86,10 @@ mod redis_schema {
     fn schema_for_type(attrs: &FieldAttr, ty: &Type) -> String {
         let mut schema: Vec<String> = vec![];
         let name = &attrs.name.serialize;
-        if ty.is_list_collection() {
-            let ty = ty.get_inner_type().unwrap();
-            schema.push(schema_for_type(attrs, ty));
+        if ty.is_list_collection()
+            && let Some(inner) = ty.get_inner_type()
+        {
+            schema.push(schema_for_type(attrs, inner));
         } else if ty.is_numeric_type() {
             schema.push(format!("{name} NUMERIC"));
         } else if ty.is_ident("String") {

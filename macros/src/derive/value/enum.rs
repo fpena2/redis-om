@@ -9,20 +9,26 @@ pub(super) fn derive(
     cont: &Container,
     variants: &[Variant],
 ) -> Result<TokenStream, ()> {
-    if !variants.iter().all(|v| {
-        let is_unit = matches!(v.fields.style, Style::Unit);
-        if !is_unit {
-            errors.push_spanned_error(v.inner, "Only Enum's Unit variant is currently supported");
-        };
-        is_unit
-    }) {
+    let mut has_invalid_variant = false;
+    for variant in variants.iter() {
+        if !matches!(variant.fields.style, Style::Unit) {
+            errors.push_spanned_error(
+                variant.inner,
+                "Only Enum's Unit variant is currently supported",
+            );
+            has_invalid_variant = true;
+        }
+    }
+    if has_invalid_variant {
         return Err(());
-    };
+    }
 
+    let mut has_skip_serializing = false;
     for variant in variants.iter().filter(|v| v.attrs.skip_serializing) {
         errors.push_spanned_error(variant.inner, "cannot skip serializing an enum variant");
+        has_skip_serializing = true;
     }
-    if variants.iter().any(|v| v.attrs.skip_serializing) {
+    if has_skip_serializing {
         return Err(());
     }
 
@@ -93,5 +99,27 @@ fn derive_from_redis_args(cont: &Container, variants: &[Variant]) -> TokenStream
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ast::Container;
+    use darling::error::Accumulator;
+
+    #[test]
+    fn reports_every_non_unit_variant() {
+        let input: syn::DeriveInput = syn::parse_quote! {
+            enum Record {
+                First(String),
+                Second(String),
+            }
+        };
+        let mut errors = Accumulator::default();
+        let cont = Container::new(&mut errors, &input).expect("container should parse");
+
+        assert!(crate::value::derive(&mut errors, &cont).is_err());
+        let rendered = errors.finish().unwrap_err().write_errors().to_string();
+        assert_eq!(rendered.matches("Only Enum's Unit variant").count(), 2);
     }
 }
