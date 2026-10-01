@@ -3,6 +3,7 @@ name = "redis-om-macros"
 description = "Proc macros for redis-om"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.88"
 authors = ["kkharji <kkharji@protonmail.com>"]
 license = "MIT"
 documentation = "https://docs.rs/redis-om-macros"
@@ -19,11 +20,11 @@ json = []
 aio = []
 
 [dependencies]
-darling        = { version = "0.20.11" }
+darling        = { version = "0.24.1" }
 ident_case     = { version = "1.0" }
 proc-macro2    = { version = "1.0" }
 quote          = { version = "1.0" }
-syn            = { version = "2.0", features = ["full"] }
+syn            = { version = "3.0", features = ["full"] }
 
 [dev-dependencies]
 redis-om       = { path = "../lib/" }
