@@ -19,8 +19,8 @@ where
     assert_redis_future(record.save(connection));
 }
 
-#[cfg(feature = "async-std-tls-comp")]
-fn async_std_tls_async_surface<C>(record: &mut Record, connection: &mut C)
+#[cfg(feature = "smol-native-tls-comp")]
+fn smol_tls_async_surface<C>(record: &mut Record, connection: &mut C)
 where
     C: redis_om::redis::aio::ConnectionLike + Send,
 {

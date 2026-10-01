@@ -115,7 +115,7 @@ fn all_primary_keys() -> Result {
         account.save(&mut conn)?;
     }
 
-    let pks = Account::all_pks(&mut conn)?.collect::<Vec<String>>();
+    let pks = Account::all_pks(&mut conn)?.collect::<Result<Vec<String>, _>>()?;
 
     let count = pks.len();
 

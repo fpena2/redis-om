@@ -34,9 +34,9 @@ fn basic_with_no_options() -> Result {
     let serialized = account
         .to_redis_args()
         .into_iter()
-        .map(|v| Value::Data(v))
+        .map(|v| Value::BulkString(v))
         .collect::<Vec<_>>();
-    let deserialized = Account::from_redis_value(&Value::Bulk(serialized))?;
+    let deserialized = Account::from_redis_value_ref(&Value::Array(serialized))?;
 
     // Ensure that values are identical
     assert_eq!(account.first_name, deserialized.first_name);
@@ -82,7 +82,8 @@ fn basic_with_custom_prefix_and_pk() -> Result {
 
     let count = conn
         .scan_match::<_, String>(format!("Account:{}", account.pk))?
-        .count();
+        .collect::<Result<Vec<String>, _>>()?
+        .len();
 
     assert_ne!(count, 0);
 
@@ -128,7 +129,7 @@ fn all_primary_keys() -> Result {
         account.save(&mut conn)?;
     }
 
-    let pks = Account::all_pks(&mut conn)?.collect::<Vec<String>>();
+    let pks = Account::all_pks(&mut conn)?.collect::<Result<Vec<String>, _>>()?;
 
     let count = pks.len();
 

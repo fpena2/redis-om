@@ -56,7 +56,7 @@ pub trait StreamModel: Sized + Send {
         conn: &mut C,
     ) -> RedisResult<Vec<Message>> {
         cmds::read::<Self>(self, read_count, block_interval)?
-            .query_async::<_, StreamReadReply>(conn)
+            .query_async::<StreamReadReply>(conn)
             .await
             .map(|reply| transformers::stream_read_reply_to_messages(self, reply))?
     }
@@ -67,7 +67,7 @@ pub trait StreamModel: Sized + Send {
         conn: &mut C,
     ) -> RedisResult<Vec<Message>> {
         cmds::read_no_group::<Self>(id)?
-            .query_async::<_, StreamReadReply>(conn)
+            .query_async::<StreamReadReply>(conn)
             .await
             .map(transformers::stream_read_no_group_reply_to_messages)?
     }

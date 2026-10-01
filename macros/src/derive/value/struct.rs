@@ -80,9 +80,9 @@ fn derive_from_redis(
     match style {
         Style::Struct => {
             let err_msg = "the data is not in the bulk data format or the length is not / 2";
-            let err = quote!(
-                RedisError::from((ErrorKind::TypeError, #err_msg, format!("{:#?}", v)))
-            );
+            let err = quote!(::redis_om::redis::ParsingError::from(
+                format!("{}: {}", #err_msg, msg)
+            ));
             for field in fields.iter().filter(|f| f.attrs.skip_deserializing) {
                 errors.push_spanned_error(
                     field.ident.as_ref().unwrap(),
@@ -162,7 +162,7 @@ fn derive_from_redis(
                     // TODO: Support default in deserialization
                     let def = quote! {
                         const #keys_ident: [&str; #possible_keys_len] = [#(#possible_keys),*];
-                        let #ident = from_redis_value(
+                        let #ident = from_redis_value_ref(
                           #keys_ident
                             .into_iter()
                             .find(|v| fm.contains_key(*v))
@@ -183,16 +183,17 @@ fn derive_from_redis(
 
             Ok(quote! {
                 impl ::redis_om::redis::FromRedisValue for #ident {
-                    fn from_redis_value(v: &::redis_om::redis::Value) -> ::redis_om::redis::RedisResult<Self> {
+                    fn from_redis_value(v: ::redis_om::redis::Value) -> Result<Self, ::redis_om::redis::ParsingError> {
                         use ::redis_om::redis::*;
                         const #possible_field_keys_ident: [&str; #possible_field_keys_len] = [#(#possible_field_keys),*];
 
-                        let Value::Bulk(bulk) = v else { return Err(#err); };
+                        let msg = format!("{:#?}", v);
+                        let Value::Array(bulk) = v else { return Err(#err); };
                         if bulk.len() % 2 != 0 { return Err(#err); };
                         let mut fm = std::collections::HashMap::new();
 
                         for chunks in bulk.chunks(2) {
-                            let key: String = from_redis_value(&chunks[0])?;
+                            let key: String = from_redis_value_ref(&chunks[0])?;
                             let value: Value = chunks[1].clone();
                             if #possible_field_keys_ident.contains(&key.as_str()) {
                                 fm.insert(key, value);
@@ -202,8 +203,8 @@ fn derive_from_redis(
                                 fm.insert(key, value);
                                 continue;
                             };
-                            let Some(Value::Bulk(vec)) = fm.get_mut(key) else {
-                                fm.insert(key.into(), Value::Bulk(vec![value]));
+                            let Some(Value::Array(vec)) = fm.get_mut(key) else {
+                                fm.insert(key.into(), Value::Array(vec![value]));
                                 continue;
                             };
 

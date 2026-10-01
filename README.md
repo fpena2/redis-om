@@ -49,16 +49,16 @@ A Rust/Redis ORM-style library that simplify the development process and reduce 
 
 ```toml
 redis-om = { version = "*" }
-# TLS support with async-std
-redis-om = { version = "*", features = ["tls"] }
+# TLS support (native-tls); pair with a runtime TLS feature for async
+redis-om = { version = "*", default-features = false, features = ["tls"] }
 # async support with tokio
 redis-om = { version = "*", features = ["tokio-comp"] }
-# async support with async-std
-redis-om = { version = "*", features = ["async-std-comp"] }
+# async support with smol
+redis-om = { version = "*", default-features = false, features = ["smol-comp"] }
 # TLS and async support with tokio
 redis-om = { version = "*", features = ["tokio-native-tls-comp"] }
-# TLS support with async-std
-redis-om = { version = "*", features = ["async-std-tls-comp"] }
+# TLS support with smol
+redis-om = { version = "*", default-features = false, features = ["smol-native-tls-comp"] }
 ```
 
 ## Hash

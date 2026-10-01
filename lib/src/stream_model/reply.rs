@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use redis::{FromRedisValue, RedisResult, Value};
+use redis::{FromRedisValue, ParsingError, Value};
 
 /// Represents a stream `id` and its field/values as a `HashMap`
 #[derive(Debug, Clone)]
@@ -32,7 +32,7 @@ pub struct StreamRangeReply {
 }
 
 impl FromRedisValue for StreamRangeReply {
-    fn from_redis_value(v: &Value) -> RedisResult<Self> {
+    fn from_redis_value(v: Value) -> Result<Self, ParsingError> {
         let rows: Vec<HashMap<String, Value>> = redis::from_redis_value(v)?;
         let ids: Vec<StreamId> = rows
             .into_iter()
@@ -44,7 +44,7 @@ impl FromRedisValue for StreamRangeReply {
 }
 
 impl FromRedisValue for StreamReadReply {
-    fn from_redis_value(v: &Value) -> RedisResult<Self> {
+    fn from_redis_value(v: Value) -> Result<Self, ParsingError> {
         let rows: Vec<HashMap<String, Vec<HashMap<String, Value>>>> = redis::from_redis_value(v)?;
         let keys = rows
             .into_iter()

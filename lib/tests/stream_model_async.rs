@@ -29,7 +29,7 @@ fn client() -> Result<redis::Client> {
 #[test]
 async fn example() -> Result {
     let client = client()?;
-    let mut conn = client.get_async_connection().await?;
+    let mut conn = client.get_multiplexed_async_connection().await?;
     let manager = RoomServiceEventManager::new("Staff");
 
     manager.ensure_group_stream(&mut conn).await?;

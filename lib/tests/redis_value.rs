@@ -1,4 +1,4 @@
-use redis_om::redis::{from_redis_value, Value};
+use redis_om::redis::{from_redis_value_ref, Value};
 use redis_om::redis::{FromRedisValue, ToRedisArgs};
 use redis_om::RedisTransportValue;
 use std::collections::HashMap;
@@ -24,9 +24,9 @@ fn struct_with_no_options() -> Result {
     let serialized = account
         .to_redis_args()
         .into_iter()
-        .map(|v| Value::Data(v))
+        .map(|v| Value::BulkString(v))
         .collect::<Vec<_>>();
-    let deserialized = Account::from_redis_value(&Value::Bulk(serialized))?;
+    let deserialized = Account::from_redis_value_ref(&Value::Array(serialized))?;
 
     // Ensure that values are identical
     assert_eq!(account.first_name, deserialized.first_name);
@@ -51,21 +51,21 @@ fn struct_with_rename_all_option() -> Result {
         last_name: "Doe".into(),
     };
 
-    let serialized = Value::Bulk(
+    let serialized = Value::Array(
         account
             .to_redis_args()
             .into_iter()
-            .map(|v| Value::Data(v))
+            .map(|v| Value::BulkString(v))
             .collect::<Vec<_>>(),
     );
 
     // Ensure that values are identical
-    let deserialized = Account::from_redis_value(&serialized)?;
+    let deserialized = Account::from_redis_value_ref(&serialized)?;
     assert_eq!(account.first_name, deserialized.first_name);
     assert_eq!(account.last_name, deserialized.last_name);
 
     // Ensure that fields are renamed
-    let account_map: HashMap<String, String> = from_redis_value(&serialized)?;
+    let account_map: HashMap<String, String> = from_redis_value_ref(&serialized)?;
     assert_eq!(account_map["firstName"], account.first_name);
     assert_eq!(account_map["lastName"], account.last_name);
 
@@ -95,49 +95,49 @@ fn struct_with_directional_rename_and_aliases() -> Result {
         last_name: "Doe".into(),
     };
 
-    let serialized = Value::Bulk(
+    let serialized = Value::Array(
         account
             .to_redis_args()
             .into_iter()
-            .map(Value::Data)
+            .map(Value::BulkString)
             .collect::<Vec<_>>(),
     );
-    let account_map: HashMap<String, String> = from_redis_value(&serialized)?;
+    let account_map: HashMap<String, String> = from_redis_value_ref(&serialized)?;
     assert_eq!(account_map["outgoing_name"], account.first_name);
     assert_eq!(account_map["lastName"], account.last_name);
     assert!(!account_map.contains_key("firstName"));
 
     for first_name_key in ["incoming_name", "historic_name", "legacy_name"] {
-        let value = Value::Bulk(vec![
-            Value::Data(first_name_key.as_bytes().to_vec()),
-            Value::Data(b"Joe".to_vec()),
-            Value::Data(b"oldLastName".to_vec()),
-            Value::Data(b"Doe".to_vec()),
+        let value = Value::Array(vec![
+            Value::BulkString(first_name_key.as_bytes().to_vec()),
+            Value::BulkString(b"Joe".to_vec()),
+            Value::BulkString(b"oldLastName".to_vec()),
+            Value::BulkString(b"Doe".to_vec()),
         ]);
-        let deserialized = Account::from_redis_value(&value)?;
+        let deserialized = Account::from_redis_value_ref(&value)?;
         assert_eq!(deserialized.first_name, account.first_name);
         assert_eq!(deserialized.last_name, account.last_name);
     }
 
     for last_name_key in ["oldLastName", "olderLastName", "lastName"] {
-        let value = Value::Bulk(vec![
-            Value::Data(b"incoming_name".to_vec()),
-            Value::Data(b"Joe".to_vec()),
-            Value::Data(last_name_key.as_bytes().to_vec()),
-            Value::Data(b"Doe".to_vec()),
+        let value = Value::Array(vec![
+            Value::BulkString(b"incoming_name".to_vec()),
+            Value::BulkString(b"Joe".to_vec()),
+            Value::BulkString(last_name_key.as_bytes().to_vec()),
+            Value::BulkString(b"Doe".to_vec()),
         ]);
-        let deserialized = Account::from_redis_value(&value)?;
+        let deserialized = Account::from_redis_value_ref(&value)?;
         assert_eq!(deserialized.first_name, account.first_name);
         assert_eq!(deserialized.last_name, account.last_name);
     }
 
-    let inherited_names = Value::Bulk(vec![
-        Value::Data(b"firstName".to_vec()),
-        Value::Data(b"Joe".to_vec()),
-        Value::Data(b"lastName".to_vec()),
-        Value::Data(b"Doe".to_vec()),
+    let inherited_names = Value::Array(vec![
+        Value::BulkString(b"firstName".to_vec()),
+        Value::BulkString(b"Joe".to_vec()),
+        Value::BulkString(b"lastName".to_vec()),
+        Value::BulkString(b"Doe".to_vec()),
     ]);
-    assert!(Account::from_redis_value(&inherited_names).is_err());
+    assert!(Account::from_redis_value_ref(&inherited_names).is_err());
 
     Ok(())
 }
@@ -160,13 +160,13 @@ fn struct_can_skip_serializing_a_field() -> Result {
         vec![b"visible".to_vec(), b"shown".to_vec()]
     );
 
-    let value = Value::Bulk(vec![
-        Value::Data(b"visible".to_vec()),
-        Value::Data(b"shown".to_vec()),
-        Value::Data(b"internal".to_vec()),
-        Value::Data(b"hidden".to_vec()),
+    let value = Value::Array(vec![
+        Value::BulkString(b"visible".to_vec()),
+        Value::BulkString(b"shown".to_vec()),
+        Value::BulkString(b"internal".to_vec()),
+        Value::BulkString(b"hidden".to_vec()),
     ]);
-    let decoded = Account::from_redis_value(&value)?;
+    let decoded = Account::from_redis_value_ref(&value)?;
     assert_eq!(decoded.visible, "shown");
     assert_eq!(decoded.internal, "hidden");
 
@@ -184,7 +184,7 @@ fn enum_with_no_options() -> Result {
     let state = State::On;
 
     let serialized = state.to_redis_args().first().unwrap().to_vec();
-    let deserialized = State::from_redis_value(&Value::Data(serialized))?;
+    let deserialized = State::from_redis_value_ref(&Value::BulkString(serialized))?;
 
     // Ensure that values are identical
     assert_eq!(deserialized, state);
@@ -204,9 +204,9 @@ fn enum_with_rename_all_option() -> Result {
     let state = State::OffDevice;
 
     let serialized = state.to_redis_args().first().unwrap().to_vec();
-    let data = Value::Data(serialized.clone());
+    let data = Value::BulkString(serialized.clone());
     let stringified = String::from_utf8(serialized)?;
-    let deserialized = State::from_redis_value(&data)?;
+    let deserialized = State::from_redis_value_ref(&data)?;
 
     // Ensure that value is lowercase
     assert_eq!(stringified.as_str(), "off-device");
@@ -228,7 +228,7 @@ fn enum_with_aliases() -> Result {
 
     for value in [b"active".as_slice(), b"enabled", b"ready"] {
         assert_eq!(
-            State::from_redis_value(&Value::Data(value.to_vec()))?,
+            State::from_redis_value_ref(&Value::BulkString(value.to_vec()))?,
             State::Active
         );
     }
@@ -247,10 +247,10 @@ fn enum_can_skip_deserializing_a_variant() -> Result {
 
     assert_eq!(State::Hidden.to_redis_args().first().unwrap(), b"Hidden");
     assert_eq!(
-        State::from_redis_value(&Value::Data(b"Visible".to_vec()))?,
+        State::from_redis_value_ref(&Value::BulkString(b"Visible".to_vec()))?,
         State::Visible
     );
-    assert!(State::from_redis_value(&Value::Data(b"Hidden".to_vec())).is_err());
+    assert!(State::from_redis_value_ref(&Value::BulkString(b"Hidden".to_vec())).is_err());
 
     Ok(())
 }
@@ -273,8 +273,8 @@ fn dotted_scalar_key_round_trips_alongside_a_collection() -> Result {
     assert_eq!(arguments[2], b"items.0".to_vec());
     assert_eq!(arguments[4], b"items.1".to_vec());
 
-    let value = Value::Bulk(arguments.into_iter().map(Value::Data).collect());
-    assert_eq!(Record::from_redis_value(&value)?, record);
+    let value = Value::Array(arguments.into_iter().map(Value::BulkString).collect());
+    assert_eq!(Record::from_redis_value_ref(&value)?, record);
 
     let one_item_record = Record {
         balance: "steady".into(),
@@ -282,8 +282,16 @@ fn dotted_scalar_key_round_trips_alongside_a_collection() -> Result {
     };
     let one_item_arguments = one_item_record.to_redis_args();
     assert_eq!(one_item_arguments[2], b"items".to_vec());
-    let one_item_value = Value::Bulk(one_item_arguments.into_iter().map(Value::Data).collect());
-    assert_eq!(Record::from_redis_value(&one_item_value)?, one_item_record);
+    let one_item_value = Value::Array(
+        one_item_arguments
+            .into_iter()
+            .map(Value::BulkString)
+            .collect(),
+    );
+    assert_eq!(
+        Record::from_redis_value_ref(&one_item_value)?,
+        one_item_record
+    );
 
     #[derive(Debug, PartialEq, RedisTransportValue)]
     struct ScalarKeys {
@@ -296,15 +304,15 @@ fn dotted_scalar_key_round_trips_alongside_a_collection() -> Result {
         root: "root".into(),
         first: "first".into(),
     };
-    let scalar_key_value = Value::Bulk(
+    let scalar_key_value = Value::Array(
         scalar_keys
             .to_redis_args()
             .into_iter()
-            .map(Value::Data)
+            .map(Value::BulkString)
             .collect(),
     );
     assert_eq!(
-        ScalarKeys::from_redis_value(&scalar_key_value)?,
+        ScalarKeys::from_redis_value_ref(&scalar_key_value)?,
         scalar_keys
     );
 
@@ -430,22 +438,22 @@ fn enum_struct_compo() -> Result {
         kind: AccountKind::Shopper,
     };
 
-    let serialized = Value::Bulk(
+    let serialized = Value::Array(
         account
             .to_redis_args()
             .into_iter()
-            .map(|v| Value::Data(v))
+            .map(|v| Value::BulkString(v))
             .collect::<Vec<_>>(),
     );
 
     // Ensure that values are identical
-    let deserialized = Account::from_redis_value(&serialized)?;
+    let deserialized = Account::from_redis_value_ref(&serialized)?;
     assert_eq!(account.first_name, deserialized.first_name);
     assert_eq!(account.last_name, deserialized.last_name);
     assert_eq!(account.kind, deserialized.kind);
 
     // Ensure that fields are renamed
-    let account_map: HashMap<String, String> = from_redis_value(&serialized)?;
+    let account_map: HashMap<String, String> = from_redis_value_ref(&serialized)?;
     assert_eq!(account_map["firstName"], account.first_name);
     assert_eq!(account_map["lastName"], account.last_name);
     assert_eq!(account_map["accountKind"], "Shopper");

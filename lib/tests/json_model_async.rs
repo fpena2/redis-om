@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 
 type Result<T = (), E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 
-async fn conn() -> RedisResult<redis::aio::Connection> {
+async fn conn() -> RedisResult<redis_om::redis::aio::MultiplexedConnection> {
     redis::Client::open("redis://127.0.0.1/")?
-        .get_async_connection()
+        .get_multiplexed_async_connection()
         .await
 }
 
@@ -68,12 +68,15 @@ async fn basic_with_custom_prefix_and_pk() -> Result {
     account.save(&mut conn).await?;
 
     let mut count = 0;
-    let mut iter = conn
-        .scan_match::<_, String>(format!("Account:{}", account.pk))
-        .await?;
+    {
+        let mut iter = conn
+            .scan_match::<_, String>(format!("Account:{}", account.pk))
+            .await?;
 
-    while let Some(_) = iter.next_item().await {
-        count += 1;
+        while let Some(item) = iter.next_item().await {
+            item?;
+            count += 1;
+        }
     }
 
     assert_ne!(count, 0);
@@ -120,10 +123,12 @@ async fn all_primary_keys() -> Result {
     }
 
     let mut pks = vec![];
-    let mut iter = Account::all_pks(&mut conn).await?;
+    {
+        let mut iter = Account::all_pks(&mut conn).await?;
 
-    while let Some(item) = iter.next_item().await {
-        pks.push(item)
+        while let Some(item) = iter.next_item().await {
+            pks.push(item?)
+        }
     }
 
     let count = pks.len();

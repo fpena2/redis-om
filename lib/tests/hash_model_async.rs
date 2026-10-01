@@ -8,13 +8,13 @@ use redis_om::redis::{FromRedisValue, ToRedisArgs};
 use redis_om::{HashModel, RedisResult};
 use tokio::test;
 
-use futures::StreamExt;
+use futures::{StreamExt, TryStreamExt};
 
 type Result<T = (), E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 
-async fn conn() -> RedisResult<redis::aio::Connection> {
+async fn conn() -> RedisResult<redis_om::redis::aio::MultiplexedConnection> {
     redis::Client::open("redis://127.0.0.1/")?
-        .get_async_connection()
+        .get_multiplexed_async_connection()
         .await
 }
 
@@ -39,9 +39,9 @@ async fn basic_with_no_options() -> Result {
     let serialized = account
         .to_redis_args()
         .into_iter()
-        .map(|v| Value::Data(v))
+        .map(|v| Value::BulkString(v))
         .collect::<Vec<_>>();
-    let deserialized = Account::from_redis_value(&Value::Bulk(serialized))?;
+    let deserialized = Account::from_redis_value_ref(&Value::Array(serialized))?;
 
     // Ensure that values are identical
     assert_eq!(account.first_name, deserialized.first_name);
@@ -88,8 +88,9 @@ async fn basic_with_custom_prefix_and_pk() -> Result {
     let count = conn
         .scan_match::<_, String>(format!("Account:{}", account.pk))
         .await?
-        .count()
-        .await;
+        .try_collect::<Vec<String>>()
+        .await?
+        .len();
 
     assert_ne!(count, 0);
 
@@ -137,8 +138,8 @@ async fn all_primary_keys() -> Result {
 
     let pks = Account::all_pks(&mut conn)
         .await?
-        .collect::<Vec<String>>()
-        .await;
+        .try_collect::<Vec<String>>()
+        .await?;
 
     let count = pks.len();
 

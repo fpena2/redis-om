@@ -52,15 +52,12 @@ fn derive_to_redis_args(cont: &Container, variants: &[Variant]) -> TokenStream {
                 match self { #(#matches)* }
             }
         }
+        impl ::redis_om::redis::ToSingleRedisArg for #type_name {}
     }
 }
 
 fn derive_from_redis_args(cont: &Container, variants: &[Variant]) -> TokenStream {
     let type_name = cont.ident;
-    let except_redis_string = quote! {
-        let msg = format!("{:?}", v);
-        return Err((TypeError, "Expected Redis string, got:", msg).into());
-    };
 
     let (values, matches): (Vec<_>, Vec<_>) = variants
         .iter()
@@ -79,22 +76,20 @@ fn derive_from_redis_args(cont: &Container, variants: &[Variant]) -> TokenStream
     let values = values.into_iter().flatten().collect::<Vec<_>>().join(", ");
     let matches = matches.into_iter().flatten();
 
-    let except_specifc_values = quote! {{
-        let msg = format!("{}, Expected one of: {}", v, #values);
-        Err((TypeError, "Invalid enum variant:", msg).into())
-    }};
-
     quote! {
         impl ::redis_om::redis::FromRedisValue for #type_name {
-            fn from_redis_value(v: &::redis_om::redis::Value) -> ::redis_om::RedisResult<Self> {
-                use ::redis_om::redis::{ErrorKind::TypeError, Value};
+            fn from_redis_value(v: ::redis_om::redis::Value) -> Result<Self, ::redis_om::redis::ParsingError> {
+                use ::redis_om::redis::Value;
 
-                let redis::Value::Data(data) = v else { #except_redis_string };
+                let msg = format!("{:?}", v);
+                let Value::BulkString(data) = v else {
+                    return Err(format!("Expected Redis string, got: {}", msg).into());
+                };
                 let value = std::str::from_utf8(&data[..])?;
 
                 match value {
                     #(#matches)*
-                    v => #except_specifc_values,
+                    v => Err(format!("Invalid enum variant: {}, Expected one of: {}", v, #values).into()),
                 }
             }
         }
