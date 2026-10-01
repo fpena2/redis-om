@@ -378,7 +378,7 @@ mod tests {
     }
 
     #[test]
-    fn reports_container_attribute_error_before_parsing_data() {
+    fn reports_container_and_nested_field_errors_together() {
         let input: syn::DeriveInput = syn::parse_quote! {
             #[redis(unknown_container)]
             struct Record {
@@ -390,6 +390,18 @@ mod tests {
 
         assert!(Container::new(&mut errors, &input).is_none());
         let errors = errors.finish().unwrap_err().write_errors().to_string();
-        assert!(errors.contains("Unknown field: `unknown_container`"));
+        assert!(errors.contains("unknown_container"));
+        assert!(errors.contains("unknown_field"));
+    }
+
+    #[test]
+    fn rejects_union_input_without_panicking() {
+        let input: syn::DeriveInput = syn::parse_quote! {
+            union Record { id: u32 }
+        };
+        let mut errors = Accumulator::default();
+
+        assert!(Container::new(&mut errors, &input).is_none());
+        assert!(errors.finish().is_err());
     }
 }
