@@ -125,14 +125,13 @@ fn struct_from_options(options: Fields<FieldOptions>) -> Fields<Field> {
     });
 
     let pk_is_set = fields.fields.iter().any(|f| f.attrs.primary_key);
-    if !pk_is_set {
-        if let Some(id_field) = fields
+    if !pk_is_set
+        && let Some(id_field) = fields
             .fields
             .iter_mut()
             .find(|f| f.attrs.name.serialize == "id")
-        {
-            id_field.attrs.primary_key = true;
-        };
+    {
+        id_field.attrs.primary_key = true;
     }
     fields
 }

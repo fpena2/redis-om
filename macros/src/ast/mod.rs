@@ -201,15 +201,15 @@ impl Name {
         rules: &RenameAllRules,
         apply_rule: fn(&RenameRule, &str) -> String,
     ) {
-        if !self.serialize_renamed {
-            if let Some(rule) = &rules.serialize {
-                self.serialize = apply_rule(rule, &self.serialize);
-            }
+        if !self.serialize_renamed
+            && let Some(rule) = &rules.serialize
+        {
+            self.serialize = apply_rule(rule, &self.serialize);
         }
-        if !self.deserialize_renamed {
-            if let Some(rule) = &rules.deserialize {
-                self.deserialize = apply_rule(rule, &self.deserialize);
-            }
+        if !self.deserialize_renamed
+            && let Some(rule) = &rules.deserialize
+        {
+            self.deserialize = apply_rule(rule, &self.deserialize);
         }
     }
 

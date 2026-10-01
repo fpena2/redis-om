@@ -79,12 +79,13 @@ impl TypeExt for Type {
 
     fn get_inner_type(&self) -> Option<&syn::Type> {
         let path = type_path(self)?;
+        let last = path.segments.last()?;
 
-        if let PathArguments::AngleBracketed(ref a) = path.segments.last()?.arguments {
-            if let syn::GenericArgument::Type(ty) = a.args.first()? {
-                return Some(ty);
-            }
-        };
+        if let PathArguments::AngleBracketed(args) = &last.arguments
+            && let Some(syn::GenericArgument::Type(ty)) = args.args.first()
+        {
+            return Some(ty);
+        }
 
         None
     }
