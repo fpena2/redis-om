@@ -1,14 +1,16 @@
 use super::{Field, FieldOptions, Variant, VariantAttr, VariantOptions};
-use crate::ast::{AccumulatorExt, RenameAll, RenameAllRules, RenameRule};
+use crate::ast::{RenameAll, RenameAllRules, RenameRule};
+use darling::Error;
 use darling::FromDeriveInput;
 use darling::ast::{Data, Fields};
 use darling::error::Accumulator;
+use darling::util::SpannedValue;
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(redis))]
 struct ContainerOptions {
-    prefix_key: Option<String>,
-    key: Option<String>,
+    prefix_key: Option<SpannedValue<String>>,
+    key: Option<SpannedValue<String>>,
     rename_all: Option<RenameAll>,
     data: Data<VariantOptions, FieldOptions>,
 }
@@ -20,8 +22,6 @@ pub(crate) struct Container<'a> {
     pub data: Data<Variant<'a>, Field>,
     /// Redis database prefix key or redis stream name
     pub prefix_key: String,
-    /// Original input.
-    pub original: &'a syn::DeriveInput,
 }
 
 impl<'a> Container<'a> {
@@ -46,12 +46,14 @@ impl<'a> Container<'a> {
         } = options;
 
         let prefix_key = match (prefix_key, key) {
-            (Some(prefix_key), Some(_key)) => {
-                errors.push_spanned_error(item, "duplicate redis attribute `prefix_key`");
-                prefix_key
+            (Some(prefix_key), Some(key)) => {
+                errors.push(
+                    Error::custom("duplicate redis attribute `prefix_key`").with_span(&key.span()),
+                );
+                prefix_key.into_inner()
             }
-            (Some(prefix_key), None) => prefix_key,
-            (None, Some(key)) => key,
+            (Some(prefix_key), None) => prefix_key.into_inner(),
+            (None, Some(key)) => key.into_inner(),
             (None, None) => item.ident.to_string().trim_start_matches("r#").to_owned(),
         };
 
@@ -109,7 +111,6 @@ impl<'a> Container<'a> {
             ident: &item.ident,
             prefix_key,
             data,
-            original: item,
         };
 
         Some(item)
@@ -164,8 +165,11 @@ mod tests {
         };
         let options = ContainerOptions::from_derive_input(&input).unwrap();
 
-        assert_eq!(options.prefix_key.as_deref(), Some("records"));
-        assert_eq!(options.key.as_deref(), Some("stream"));
+        assert_eq!(
+            options.prefix_key.as_deref().map(String::as_str),
+            Some("records")
+        );
+        assert_eq!(options.key.as_deref().map(String::as_str), Some("stream"));
         let Some(RenameAll::Parts(parts)) = options.rename_all else {
             unreachable!()
         };

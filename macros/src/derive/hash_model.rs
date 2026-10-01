@@ -36,7 +36,7 @@ mod redis_schema {
         let prefix_key = cont.prefix_key.as_str();
 
         let Data::Struct(fields) = &cont.data else {
-            let msg = &"Enum is not currenlty supported for redissearch_model";
+            let msg = &"Enum is not currently supported for redissearch_model";
             errors.push_spanned_error(cont.ident, msg);
             return Err(());
         };
@@ -46,7 +46,7 @@ mod redis_schema {
                 "{} Struct is not supported",
                 style_name(fields.style, fields.fields.len())
             );
-            errors.push_spanned_error(cont.original, msg);
+            errors.push_spanned_error(cont.ident, msg);
             return Err(());
         };
 

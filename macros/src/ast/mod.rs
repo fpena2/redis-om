@@ -34,6 +34,17 @@ pub(crate) enum Rename<T, P> {
 pub(crate) type RedisRename = Rename<String, RenameParts<String>>;
 pub(crate) type RenameAll = Rename<RenameRule, RenameAllParts>;
 
+const RENAME_RULE_SPELLINGS: [&str; 8] = [
+    "lowercase",
+    "UPPERCASE",
+    "PascalCase",
+    "camelCase",
+    "snake_case",
+    "SCREAMING_SNAKE_CASE",
+    "kebab-case",
+    "SCREAMING-KEBAB-CASE",
+];
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(crate) enum RenameRule {
     Standard(IdentCaseRule),
@@ -49,9 +60,7 @@ impl FromMeta for RenameRule {
             _ => value
                 .parse::<IdentCaseRule>()
                 .map(Self::Standard)
-                .map_err(|_| {
-                    Error::custom(format!("unknown rename rule `rename_all = {value:?}`"))
-                }),
+                .map_err(|_| Error::unknown_value_with_alts(value, RENAME_RULE_SPELLINGS.iter())),
         }
     }
 }
@@ -323,7 +332,19 @@ fn rejects_unknown_rename_all_rule() {
     else {
         panic!("unknown rename rule should be rejected");
     };
-    assert!(error.to_string().contains("unknown rename rule"));
+    let rendered = error.to_string();
+    assert!(rendered.contains("unknown-case-rule"));
+    assert!(
+        rendered.contains("Available values") || rendered.contains("Did you mean"),
+        "alternate spellings should be offered: {rendered}"
+    );
+}
+
+#[test]
+fn rename_rule_spellings_are_all_accepted() {
+    for spelling in RENAME_RULE_SPELLINGS {
+        assert!(RenameRule::from_string(spelling).is_ok(), "{spelling}");
+    }
 }
 
 #[test]

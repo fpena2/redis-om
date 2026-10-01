@@ -55,7 +55,7 @@ fn derive_to_redis_args(
                 "{} Struct is not supported",
                 style_name(*style, fields.len())
             );
-            errors.push_spanned_error(cont.original, msg);
+            errors.push_spanned_error(cont.ident, msg);
             return Err(());
         }
     };
@@ -223,7 +223,7 @@ fn derive_from_redis(
                 "{} Struct is not supported",
                 style_name(*style, fields.len())
             );
-            errors.push_spanned_error(cont.original, msg);
+            errors.push_spanned_error(cont.ident, msg);
             Err(())
         }
     }

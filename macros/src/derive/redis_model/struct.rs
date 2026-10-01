@@ -26,8 +26,8 @@ pub(super) fn derive(
                 .find(|f| f.ident.as_ref() == Some(&pk_ident))
                 .is_none()
             {
-                let msg = "A primary field doesn't exists, either add `id` field or annotate a field `primary_key`".to_string();
-                errors.push_spanned_error(cont.original, msg);
+                let msg = "A primary field doesn't exist, either add `id` field or annotate a field `primary_key`".to_string();
+                errors.push_spanned_error(cont.ident, msg);
                 return Err(());
             };
 
@@ -52,7 +52,7 @@ pub(super) fn derive(
                 "{} Struct is not supported",
                 style_name(*style, fields.len())
             );
-            errors.push_spanned_error(cont.original, msg);
+            errors.push_spanned_error(cont.ident, msg);
             Err(())
         }
     }
